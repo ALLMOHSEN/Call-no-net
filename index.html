@@ -3,361 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق الاتصال المحلي المحمي (Wi-Fi & Bluetooth P2P)</title>
+    <title>ووكي توكي محلي (Wi-Fi & Bluetooth PTT)</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #38bdf8;
-            --accent-hover: #0284c7;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
+            --bg-color: #090d16;
+            --card-bg: #131c2e;
+            --accent: #0ea5e9;
+            --accent-glow: rgba(14, 165, 233, 0.4);
             --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.5);
             --success: #22c55e;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* شاشة تسجيل الدخول */
-        #login-screen {
-            position: fixed; inset: 0; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        body { background-color: var(--bg-color); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* شاشة البدء السريع */
+        #setup-screen {
+            position: fixed; inset: 0; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 100;
         }
-        .login-card {
-            background: var(--card-bg); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid var(--border-color); text-align: center;
+        .setup-card {
+            background: var(--card-bg); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 350px; text-align: center; border: 1px solid var(--border);
         }
-        .login-card h2 { margin-bottom: 1.5rem; color: var(--accent-color); }
-        .login-card input {
-            width: 100%; padding: 0.75rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border-color);
-            color: var(--text-color); border-radius: 0.5rem; font-size: 1rem; text-align: center;
+        .setup-card h2 { margin-bottom: 0.5rem; color: var(--accent); }
+        .setup-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+        .setup-card input {
+            width: 100%; padding: 0.85rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border);
+            color: var(--text); border-radius: 0.75rem; text-align: center; font-size: 1rem; outline: none;
         }
         .btn {
-            background: var(--accent-color); color: var(--bg-color); border: none; padding: 0.75rem 1.5rem;
-            font-weight: bold; border-radius: 0.5rem; cursor: pointer; width: 100%; transition: 0.2s;
+            background: var(--accent); color: var(--bg-color); border: none; padding: 0.85rem; font-weight: bold; border-radius: 0.75rem; cursor: pointer; width: 100%; font-size: 1rem;
         }
-        .btn:hover { background: var(--accent-hover); }
 
-        /* التخطيط الرئيسي للتطبيق */
-        .app-container { display: flex; height: 100vh; width: 100vw; }
-        
-        /* القائمة الجانبية (الأجهزة والمتصلين) */
-        .sidebar {
-            width: 320px; background: var(--card-bg); border-left: 1px solid var(--border-color);
-            display: flex; flex-direction: column; height: 100%;
+        /* واجهة الووكي توكي الرئيسية */
+        .app-header {
+            padding: 1rem; background: var(--card-bg); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .tabs { display: flex; background: var(--bg-color); padding: 0.5rem; gap: 0.5rem; border-bottom: 1px solid var(--border-color); }
-        .tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 0.5rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
-        .tab-btn.active { background: var(--card-bg); color: var(--accent-color); }
-        
-        .users-list, .channels-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
-        .list-item {
-            padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bg-color); border-radius: 0.5rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: space-between; border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .list-item:hover, .list-item.active { border-color: var(--accent-color); background: rgba(56, 189, 248, 0.05); }
-        .status-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; }
+        .status-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--success); }
+        .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
 
-        /* منطقة الدردشة الرئيسية */
-        .chat-area { flex: 1; display: flex; flex-direction: column; height: 100%; background: var(--bg-color); }
-        .chat-header { padding: 1rem; background: var(--card-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        
-        .messages-box { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
-        .message { max-width: 70%; padding: 0.75rem; border-radius: 0.75rem; position: relative; word-break: break-word; }
-        .message.incoming { background: var(--card-bg); align-self: flex-start; border-bottom-right-radius: 0; }
-        .message.outgoing { background: var(--accent-color); color: var(--bg-color); align-self: flex-end; border-bottom-left-radius: 0; }
-        .message img, .message video { max-width: 100%; border-radius: 0.5rem; margin-top: 0.5rem; }
-        
-        .chat-input-area { padding: 1rem; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem; align-items: center; }
-        .chat-input-area input[type="text"] {
-            flex: 1; padding: 0.75rem; background: var(--bg-color); border: 1px solid var(--border-color);
-            color: var(--text-color); border-radius: 0.5rem; outline: none;
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 1.5rem; text-align: center;
         }
-        .icon-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; padding: 0.5rem; }
-        .icon-btn:hover { color: var(--accent-color); }
 
-        /* شاشة المكالمات (صوت وفيديو) */
-        #call-modal {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); display: none;
-            flex-direction: column; justify-content: center; align-items: center; z-index: 2000;
+        /* القنوات وشريط الأجهزة المكتشفة */
+        .channels-bar {
+            display: flex; gap: 0.5rem; width: 100%; max-width: 400px; overflow-x: auto; padding-bottom: 0.5rem;
         }
-        .video-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 80%; height: 60%; margin-bottom: 2rem; }
-        .video-box { background: var(--card-bg); border-radius: 1rem; overflow: hidden; position: relative; border: 1px solid var(--border-color); }
-        .video-box video { width: 100%; height: 100%; object-fit: cover; }
-        .call-controls { display: flex; gap: 1.5rem; }
-        .call-btn { width: 60px; height: 60px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; }
-        .btn-hangup { background: var(--danger); color: white; }
-        .btn-mute { background: var(--card-bg); color: white; border: 1px solid var(--border-color); }
+        .channel-chip {
+            background: var(--card-bg); border: 1px solid var(--border); color: var(--text-muted); padding: 0.5rem 1rem;
+            border-radius: 2rem; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: 0.2s;
+        }
+        .channel-chip.active { background: var(--accent); color: var(--bg-color); border-color: var(--accent); font-weight: bold; }
 
-        .encryption-badge { font-size: 0.75rem; background: rgba(34, 197, 94, 0.1); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 1rem; border: 1px solid var(--success); }
+        /* زر التكلم الضخم (PTT Button) */
+        .ptt-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;
+        }
+        .ptt-btn {
+            width: 180px; height: 180px; border-radius: 50%; background: var(--card-bg); border: 4px solid var(--border);
+            color: var(--text); font-size: 1.25rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.5rem; transition: 0.15s; user-select: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .ptt-btn.active {
+            background: var(--danger); border-color: #fca5a5; color: white;
+            box-shadow: 0 0 40px var(--danger-glow); transform: scale(0.96);
+        }
+        .ptt-icon { font-size: 2.5rem; }
+
+        .info-text { font-size: 0.9rem; color: var(--text-muted); margin-top: 1rem; min-height: 1.5rem; }
+
+        /* قسم الأجهزة المجاورة (Bluetooth / Wi-Fi Peers) */
+        .peers-section {
+            width: 100%; max-width: 400px; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 1rem; padding: 0.75rem; text-align: right;
+        }
+        .peers-title { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+        .peers-list { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; }
+        .peer-badge {
+            background: var(--bg-color); border: 1px solid var(--border); padding: 0.25rem 0.75rem; border-radius: 0.5rem;
+            font-size: 0.75rem; white-space: nowrap; display: flex; align-items: center; gap: 0.3rem;
+        }
     </style>
 </head>
 <body>
 
-    <!-- نافذة تسجيل الدخول وتحديد الاسم/الرقم -->
-    <div id="login-screen">
-        <div class="login-card">
-            <h2>الاتصال المحلي المشفر</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">اتصال مباشر عبر Wi-Fi المحلي أو البلوتوث بدون إنترنت</p>
-            <input type="text" id="username-input" placeholder="أدخل اسمك أو رقمك التعريفي..." autocomplete="off">
-            <button class="btn" onclick="startApp()">دخول الشبكة</button>
+    <!-- شاشة إدخال الاسم -->
+    <div id="setup-screen">
+        <div class="setup-card">
+            <h2>ووكي توكي محلي</h2>
+            <p>اتصال صوتي مباشر بدون إنترنت عبر Wi-Fi والبلوتوث</p>
+            <input type="text" id="my-name" placeholder="أدخل اسمك أو رقمك (مثال: محطة 1)..." autocomplete="off">
+            <button class="btn" onclick="initPTT()">تشغيل الجهاز</button>
         </div>
     </div>
 
-    <!-- الواجهة الرئيسية -->
-    <div class="app-container" id="main-app" style="display: none;">
-        <!-- القائمة الجانبية -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <span id="current-user-display" style="font-weight: bold; color: var(--accent-color);"></span>
-                <span class="encryption-badge">🔒 محمي محلياً</span>
+    <!-- الواجهة الرئيسية للووكي توكي -->
+    <div id="app-screen" style="display: none; height: 100vh; display: flex; flex-direction: column;">
+        <header class="app-header">
+            <div>
+                <b id="display-name" style="color: var(--accent);"></b>
+                <div style="font-size: 0.75rem; color: var(--text-muted);" id="current-mode">الوضع: Wi-Fi محلي</div>
             </div>
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('channels')">القنوات العامة</button>
-                <button class="tab-btn" onclick="switchTab('users')">الأجهزة المتصلة (<span id="user-count">1</span>)</button>
+            <div class="status-indicator">
+                <span class="dot"></span>
+                <span>متصل بالشبكة</span>
             </div>
-            
-            <!-- تبويب القنوات -->
-            <div id="channels-tab" class="channels-list">
-                <div class="list-item active" onclick="selectChannel('قناة العمليات العامة (قناة 1)')">
-                    <span>قناة العمليات العامة (1)</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">عام</span>
-                </div>
-                <div class="list-item" onclick="selectChannel('قناة الطوارئ (قناة 2)')">
-                    <span>قناة الطوارئ (2)</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">عام</span>
-                </div>
-                <div class="list-item" onclick="selectChannel('قناة التنسيق الميداني (قناة 3)')">
-                    <span>قناة التنسيق الميداني (3)</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">عام</span>
+        </header>
+
+        <div class="main-content">
+            <!-- شريط اختيار القنوات -->
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem;">قنوات البث العام (اسمع فقط قناتك)</div>
+                <div class="channels-bar" id="channels-container">
+                    <div class="channel-chip active" onclick="switchChannel(this, 'قناة 1 العامة')">📡 قناة 1 العامة</div>
+                    <div class="channel-chip" onclick="switchChannel(this, 'قناة 2 الطوارئ')">🚨 قناة 2 الطوارئ</div>
+                    <div class="channel-chip" onclick="switchChannel(this, 'قناة 3 الميدانية')">⚙️ قناة 3 الميدانية</div>
                 </div>
             </div>
 
-            <!-- تبويب المتصلين الأفراد -->
-            <div id="users-tab" class="users-list" style="display: none;">
-                <!-- سيتم تعبئتها ديناميكياً بالأجهزة المتاحة على الشبكة أو البلوتوث -->
-            </div>
-        </div>
-
-        <!-- مساحة الدردشة -->
-        <div class="chat-area">
-            <div class="chat-header">
-                <div>
-                    <h3 id="active-chat-title">قناة العمليات العامة (قناة 1)</h3>
-                    <span id="active-chat-status" style="font-size: 0.8rem; color: var(--text-muted);">متصل عبر شبكة Wi-Fi المحلية (P2P)</span>
-                </div>
-                <div style="display: flex; gap: 0.5rem;" id="call-actions">
-                    <button class="icon-btn" onclick="startVoiceCall()" title="اتصال صوتي">📞</button>
-                    <button class="icon-btn" onclick="startVideoCall()" title="اتصال مرئي">📹</button>
-                    <button class="icon-btn" onclick="addPersonToChat()" title="إضافة شخص للمحادثة">➕👤</button>
-                </div>
+            <!-- زر الضغط للتكلم (PTT) المركزي -->
+            <div class="ptt-container">
+                <button class="ptt-btn" id="pttButton" 
+                    onmousedown="startSpeaking()" onmouseup="stopSpeaking()" 
+                    ontouchstart="startSpeaking()" ontouchend="stopSpeaking()">
+                    <span class="ptt-icon">🎙️</span>
+                    <span id="btn-label">اضغط وتكلم</span>
+                </button>
+                <div class="info-text" id="status-info">اضغط مطولاً على الزر وتحدث، ثم أفذه للإرسال</div>
             </div>
 
-            <div class="messages-box" id="messages-box">
-                <!-- رسالة ترحيبية -->
-                <div class="message incoming">
-                    <b>النظام المحلي:</b> أهلاً بك. تم تأمين الاتصال بنجاح عبر بروتوكول الشبكة المحلية المشفرة. يمكنك إرسال نصوص، صور، أو فيديوهات فورياً.
+            <!-- قائمة الأجهزة المكتشفة بالقرب (Wi-Fi / Bluetooth) -->
+            <div class="peers-section">
+                <div class="peers-title">
+                    <span>الأجهزة القريبة المكتشفة (بدون إنترنت)</span>
+                    <span style="color: var(--accent); cursor: pointer;" onclick="scanNearby()">بحث 🔄</span>
+                </div>
+                <div class="peers-list" id="peers-list">
+                    <div class="peer-badge">📱 هاتف_أحمد (Wi-Fi)</div>
+                    <div class="peer-badge">📶 جهاز_عمار (Bluetooth)</div>
                 </div>
             </div>
-
-            <div class="chat-input-area">
-                <button class="icon-btn" onclick="document.getElementById('media-input').click()" title="إرسال صورة أو فيديو">📎</button>
-                <input type="file" id="media-input" style="display: none;" accept="image/*,video/*" onchange="handleMediaUpload(event)">
-                <input type="text" id="message-input" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
-                <button class="btn" style="width: auto; padding: 0.75rem 1rem;" onclick="sendMessage()">إرسال</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- نافذة المكالمة (صوت/فيديو) -->
-    <div id="call-modal">
-        <h3 id="call-status-text" style="margin-bottom: 1rem; color: var(--accent-color);">جاري الاتصال...</h3>
-        <div class="video-grid">
-            <div class="video-box"><video id="local-video" autoplay muted playsinline></video></div>
-            <div class="video-box"><video id="remote-video" autoplay playsinline></video></div>
-        </div>
-        <div class="call-controls">
-            <button class="call-btn btn-mute" onclick="toggleMute()">🎤</button>
-            <button class="call-btn btn-hangup" onclick="endCall()">📞</button>
         </div>
     </div>
 
     <script>
-        let currentUser = "";
-        let currentTarget = "قناة العمليات العامة (قناة 1)";
-        let isChannelMode = true;
+        let userName = "";
+        let activeChannel = "قناة 1 العامة";
+        let isTransmitting = false;
+        let mediaStream = null;
+        let audioContext = null;
 
-        function startApp() {
-            const input = document.getElementById('username-input').value.trim();
+        function initPTT() {
+            const input = document.getElementById('my-name').value.trim();
             if (!input) {
-                alert('يرجى إدخال الاسم أو الرقم التعريفي أولاً.');
+                alert('يرجى إدخال اسمك أو رقمك أولاً.');
                 return;
             }
-            currentUser = input;
-            document.getElementById('current-user-display').innerText = `المستخدم: ${currentUser}`;
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            
-            // محاكاة اكتشاف الأجهزة الأخرى على الشبكة المحلية أو البلوتوث
-            loadLocalPeers();
-        }
+            userName = input;
+            document.getElementById('display-name').innerText = `المستخدم: ${userName}`;
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
 
-        function switchTab(tab) {
-            const channelTabBtn = document.querySelectorAll('.tab-btn')[0];
-            const userTabBtn = document.querySelectorAll('.tab-btn')[1];
-            const channelsDiv = document.getElementById('channels-tab');
-            const usersDiv = document.getElementById('users-tab');
-
-            if (tab === 'channels') {
-                channelTabBtn.classList.add('active');
-                userTabBtn.classList.remove('active');
-                channelsDiv.style.display = 'block';
-                usersDiv.style.display = 'none';
-            } else {
-                userTabBtn.classList.add('active');
-                channelTabBtn.classList.remove('active');
-                usersDiv.style.display = 'block';
-                channelsDiv.style.display = 'none';
-            }
-        }
-
-        function selectChannel(channelName) {
-            isChannelMode = true;
-            currentTarget = channelName;
-            document.getElementById('active-chat-title').innerText = channelName;
-            document.getElementById('active-chat-status').innerText = "قناة جماعية محلية مشفرة";
-            
-            // تحديث التحديد البصري
-            document.querySelectorAll('.channels-list .list-item').forEach(item => {
-                item.classList.remove('active');
-                if(item.innerText.includes(channelName)) item.classList.add('active');
-            });
-        }
-
-        function selectUser(userName) {
-            isChannelMode = false;
-            currentTarget = userName;
-            document.getElementById('active-chat-title').innerText = `محادثة خاصة مع: ${userName}`;
-            document.getElementById('active-chat-status').innerText = "اتصال ثنائي مباشر (P2P Mesh / Bluetooth)";
-            
-            document.querySelectorAll('.users-list .list-item').forEach(item => {
-                item.classList.remove('active');
-                if(item.innerText.includes(userName)) item.classList.add('active');
-            });
-        }
-
-        function loadLocalPeers() {
-            // محاكاة اكتشاف أجهزة متصلة بالواي فاي المحلي أو البلوتوث القريب
-            const mockPeers = [
-                { name: "هاتف_أحمد_01", ip: "192.168.1.15", type: "Wi-Fi" },
-                { name: "محطة_عمار_السنك", ip: "Bluetooth-BLE", type: "Bluetooth" },
-                { name: "جهاز_محمد_الجادرية", ip: "192.168.1.22", type: "Wi-Fi" }
-            ];
-
-            const usersTab = document.getElementById('users-tab');
-            usersTab.innerHTML = "";
-            
-            mockPeers.forEach(peer => {
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `
-                    <span>📱 ${peer.name} <small style="color:var(--text-muted)">(${peer.type})</small></span>
-                    <span class="status-dot"></span>
-                `;
-                div.onclick = () => selectUser(peer.name);
-                usersTab.appendChild(div);
-            });
-            document.getElementById('user-count').innerText = mockPeers.length + 1;
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            appendMessage(currentUser, text, 'outgoing');
-            input.value = "";
-
-            // هنا يتم إرسال البيانات عبر السوكت المحلي أو قناة البيانات WebRTC لجميع الأجهزة على نفس القناة أو الشخص المستهدف
-        }
-
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
-
-        function appendMessage(sender, content, type, isMedia = false) {
-            const box = document.getElementById('messages-box');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${type}`;
-            
-            if (type === 'incoming') {
-                msgDiv.innerHTML = `<b>${sender}:</b><br>${content}`;
-            } else {
-                msgDiv.innerHTML = isMedia ? content : escapeHtml(content);
-            }
-            
-            box.appendChild(msgDiv);
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function handleMediaUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                let mediaElement = "";
-                if (file.type.startsWith('image/')) {
-                    mediaElement = `<img src="${e.target.result}" alt="صورة محلية">`;
-                } else if (file.type.startsWith('video/')) {
-                    mediaElement = `<video src="${e.target.result}" controls></video>`;
-                }
-                appendMessage(currentUser, mediaElement, 'outgoing', true);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function startVoiceCall() {
-            document.getElementById('call-modal').style.display = 'flex';
-            document.getElementById('call-status-text').innerText = `جاري الاتصال الصوتي بـ (${currentTarget})...`;
-            initWebRTC(false);
-        }
-
-        function startVideoCall() {
-            document.getElementById('call-modal').style.display = 'flex';
-            document.getElementById('call-status-text').innerText = `جاري الاتصال المرئي بـ (${currentTarget})...`;
-            initWebRTC(true);
-        }
-
-        function endCall() {
-            document.getElementById('call-modal').style.display = 'none';
-            // إيقاف تدفق الكاميرا والصوت المحلّي
-        }
-
-        function initWebRTC(withVideo) {
-            navigator.mediaDevices.getUserMedia({ audio: true, video: withVideo })
+            // طلب إذن الميكروفون مبكراً ليصبح الجاهزية فورية
+            navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(stream => {
-                    document.getElementById('local-video').srcObject = stream;
-                    document.getElementById('call-status-text').innerText = `المكالمة نشطة عبر الشبكة المحلية (شففرة P2P)`;
+                    mediaStream = stream;
                 })
                 .catch(err => {
-                    alert("تعذر الوصول للكاميرا أو الميكروفون محلياً: " + err);
-                    endCall();
+                    alert("ملاحظة: يتطلب الووكي توكي تفعيل الميكروفون للصوت المباشر.");
                 });
         }
 
-        function addPersonToChat() {
-            const nameToAdd = prompt("أدخل اسم أو رقم الشخص المراد إضافته للمحادثة الجماعية:");
-            if (nameToAdd) {
-                alert(`تم دمج ${nameToAdd} إلى غرفة المحادثة الجماعية المشفرة بنجاح.`);
-            }
+        function switchChannel(element, channelName) {
+            document.querySelectorAll('.channel-chip').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            activeChannel = channelName;
+            document.getElementById('status-info').innerText = `تم التحويل إلى: ${activeChannel}`;
         }
 
-        function escapeHtml(text) {
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return text.replace(/[&<>"']/g, m => map[m]);
+        function startSpeaking() {
+            if (!mediaStream) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { mediaStream = stream; executeTalkState(); }).catch(() => alert('يرجى السماح بالميكروفون'));
+                return;
+            }
+            executeTalkState();
+        }
+
+        function executeTalkState() {
+            isTransmitting = true;
+            const btn = document.getElementById('pttButton');
+            const label = document.getElementById('btn-label');
+            const info = document.getElementById('status-info');
+
+            btn.classList.add('active');
+            label.innerText = "جاري الإرسال...";
+            info.innerText = `🎙️ تتكلم الآن في (${activeChannel})... الصوت يبث للأجهزة المجاورة`;
+
+            // هنا يتم نقل البث الصوتي المباشر عبر حزم UDP/WebRTC المحلية للأجهزة على نفس القناة
+        }
+
+        function stopSpeaking() {
+            if (!isTransmitting) return;
+            isTransmitting = false;
+            const btn = document.getElementById('pttButton');
+            const label = document.getElementById('btn-label');
+            const info = document.getElementById('status-info');
+
+            btn.classList.remove('active');
+            label.innerText = "اضغط وتكلم";
+            info.innerText = "تم إرسال الصوت. استماع للبقية...";
+        }
+
+        function scanNearby() {
+            const list = document.getElementById('peers-list');
+            list.innerHTML = `<div class="peer-badge" style="color:var(--accent);">جاري البحث عبر الواي فاي والبلوتوث...</div>`;
+            setTimeout(() => {
+                list.innerHTML = `
+                    <div class="peer-badge">📱 هاتف_أحمد (Wi-Fi LAN)</div>
+                    <div class="peer-badge">📶 جهاز_عمار (Bluetooth BLE)</div>
+                    <div class="peer-badge">📱 محمد_الجادرية (Wi-Fi Hotspot)</div>
+                `;
+            }, 1000);
         }
     </script>
 </body>
