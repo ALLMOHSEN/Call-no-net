@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ووكي توكي محلي (Wi-Fi & Bluetooth PTT)</title>
+    <title>ووكي توكي سريعة (Wi-Fi & Bluetooth PTT)</title>
     <style>
         :root {
             --bg-color: #090d16;
             --card-bg: #131c2e;
             --accent: #0ea5e9;
-            --accent-glow: rgba(14, 165, 233, 0.4);
             --danger: #ef4444;
             --danger-glow: rgba(239, 68, 68, 0.5);
             --success: #22c55e;
+            --success-glow: rgba(34, 197, 94, 0.4);
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --border: #1e293b;
@@ -20,24 +20,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* شاشة البدء السريع */
-        #setup-screen {
-            position: fixed; inset: 0; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 100;
-        }
-        .setup-card {
-            background: var(--card-bg); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 350px; text-align: center; border: 1px solid var(--border);
-        }
-        .setup-card h2 { margin-bottom: 0.5rem; color: var(--accent); }
-        .setup-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-        .setup-card input {
-            width: 100%; padding: 0.85rem; margin-bottom: 1rem; background: var(--bg-color); border: 1px solid var(--border);
-            color: var(--text); border-radius: 0.75rem; text-align: center; font-size: 1rem; outline: none;
-        }
-        .btn {
-            background: var(--accent); color: var(--bg-color); border: none; padding: 0.85rem; font-weight: bold; border-radius: 0.75rem; cursor: pointer; width: 100%; font-size: 1rem;
-        }
-
-        /* واجهة الووكي توكي الرئيسية */
+        /* الهيدر العلوي */
         .app-header {
             padding: 1rem; background: var(--card-bg); border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center;
@@ -46,10 +29,10 @@
         .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
 
         .main-content {
-            flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 1.5rem; text-align: center;
+            flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 1.25rem; text-align: center;
         }
 
-        /* القنوات وشريط الأجهزة المكتشفة */
+        /* القنوات */
         .channels-bar {
             display: flex; gap: 0.5rem; width: 100%; max-width: 400px; overflow-x: auto; padding-bottom: 0.5rem;
         }
@@ -59,13 +42,26 @@
         }
         .channel-chip.active { background: var(--accent); color: var(--bg-color); border-color: var(--accent); font-weight: bold; }
 
-        /* زر التكلم الضخم (PTT Button) */
-        .ptt-container {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;
+        /* منطقة أزرار التكلم */
+        .controls-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; flex: 1; margin: 1rem 0;
         }
+
+        /* زر الميكروفون المفتوح باستمرار (Lock Switch) */
+        .mic-toggle-btn {
+            background: var(--card-bg); border: 2px solid var(--border); color: var(--text);
+            padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.95rem; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .mic-toggle-btn.locked {
+            background: var(--success); color: #000; border-color: var(--success);
+            box-shadow: 0 0 20px var(--success-glow);
+        }
+
+        /* زر الضغط للتكلم (PTT Button) */
         .ptt-btn {
-            width: 180px; height: 180px; border-radius: 50%; background: var(--card-bg); border: 4px solid var(--border);
-            color: var(--text); font-size: 1.25rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column;
+            width: 170px; height: 170px; border-radius: 50%; background: var(--card-bg); border: 4px solid var(--border);
+            color: var(--text); font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 0.5rem; transition: 0.15s; user-select: none;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
@@ -75,9 +71,9 @@
         }
         .ptt-icon { font-size: 2.5rem; }
 
-        .info-text { font-size: 0.9rem; color: var(--text-muted); margin-top: 1rem; min-height: 1.5rem; }
+        .info-text { font-size: 0.85rem; color: var(--text-muted); min-height: 1.5rem; }
 
-        /* قسم الأجهزة المجاورة (Bluetooth / Wi-Fi Peers) */
+        /* قائمة المتصلين بالقرب */
         .peers-section {
             width: 100%; max-width: 400px; background: var(--card-bg); border: 1px solid var(--border);
             border-radius: 1rem; padding: 0.75rem; text-align: right;
@@ -92,61 +88,57 @@
 </head>
 <body>
 
-    <!-- شاشة إدخال الاسم -->
-    <div id="setup-screen">
-        <div class="setup-card">
-            <h2>ووكي توكي محلي</h2>
-            <p>اتصال صوتي مباشر بدون إنترنت عبر Wi-Fi والبلوتوث</p>
-            <input type="text" id="my-name" placeholder="أدخل اسمك أو رقمك (مثال: محطة 1)..." autocomplete="off">
-            <button class="btn" onclick="initPTT()">تشغيل الجهاز</button>
+    <!-- الواجهة الرئيسية مباشرة -->
+    <header class="app-header">
+        <div>
+            <b id="display-name" style="color: var(--accent);">جاري التحديد...</b>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">اتصال محلي: Wi-Fi & Bluetooth</div>
         </div>
-    </div>
+        <div class="status-indicator">
+            <span class="dot"></span>
+            <span>نشط محلياً</span>
+        </div>
+    </header>
 
-    <!-- الواجهة الرئيسية للووكي توكي -->
-    <div id="app-screen" style="display: none; height: 100vh; display: flex; flex-direction: column;">
-        <header class="app-header">
-            <div>
-                <b id="display-name" style="color: var(--accent);"></b>
-                <div style="font-size: 0.75rem; color: var(--text-muted);" id="current-mode">الوضع: Wi-Fi محلي</div>
+    <div class="main-content">
+        <!-- اختيارات القنوات -->
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem;">اختر القناة:</div>
+            <div class="channels-bar">
+                <div class="channel-chip active" onclick="switchChannel(this, 'قناة 1 العامة')">📡 قناة 1 العامة</div>
+                <div class="channel-chip" onclick="switchChannel(this, 'قناة 2 الطوارئ')">🚨 قناة 2 الطوارئ</div>
+                <div class="channel-chip" onclick="switchChannel(this, 'قناة 3 الميدانية')">⚙️ قناة 3 الميدانية</div>
             </div>
-            <div class="status-indicator">
-                <span class="dot"></span>
-                <span>متصل بالشبكة</span>
-            </div>
-        </header>
+        </div>
 
-        <div class="main-content">
-            <!-- شريط اختيار القنوات -->
-            <div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem;">قنوات البث العام (اسمع فقط قناتك)</div>
-                <div class="channels-bar" id="channels-container">
-                    <div class="channel-chip active" onclick="switchChannel(this, 'قناة 1 العامة')">📡 قناة 1 العامة</div>
-                    <div class="channel-chip" onclick="switchChannel(this, 'قناة 2 الطوارئ')">🚨 قناة 2 الطوارئ</div>
-                    <div class="channel-chip" onclick="switchChannel(this, 'قناة 3 الميدانية')">⚙️ قناة 3 الميدانية</div>
-                </div>
-            </div>
+        <!-- منطقة الأزرار -->
+        <div class="controls-container">
+            <!-- زر قفل/فتح الميكروفون المباشر -->
+            <button class="mic-toggle-btn" id="lockMicBtn" onclick="toggleMicLock()">
+                <span id="lockIcon">🔒</span>
+                <span id="lockText">ابقاء الميكروفون مفتوحاً</span>
+            </button>
 
-            <!-- زر الضغط للتكلم (PTT) المركزي -->
-            <div class="ptt-container">
-                <button class="ptt-btn" id="pttButton" 
-                    onmousedown="startSpeaking()" onmouseup="stopSpeaking()" 
-                    ontouchstart="startSpeaking()" ontouchend="stopSpeaking()">
-                    <span class="ptt-icon">🎙️</span>
-                    <span id="btn-label">اضغط وتكلم</span>
-                </button>
-                <div class="info-text" id="status-info">اضغط مطولاً على الزر وتحدث، ثم أفذه للإرسال</div>
-            </div>
+            <!-- زر الضغط للتكلم (PTT) -->
+            <button class="ptt-btn" id="pttButton" 
+                onmousedown="startSpeaking()" onmouseup="stopSpeaking()" 
+                ontouchstart="startSpeaking()" ontouchend="stopSpeaking()">
+                <span class="ptt-icon">🎙️</span>
+                <span id="btn-label">اضغط وتكلم</span>
+            </button>
 
-            <!-- قائمة الأجهزة المكتشفة بالقرب (Wi-Fi / Bluetooth) -->
-            <div class="peers-section">
-                <div class="peers-title">
-                    <span>الأجهزة القريبة المكتشفة (بدون إنترنت)</span>
-                    <span style="color: var(--accent); cursor: pointer;" onclick="scanNearby()">بحث 🔄</span>
-                </div>
-                <div class="peers-list" id="peers-list">
-                    <div class="peer-badge">📱 هاتف_أحمد (Wi-Fi)</div>
-                    <div class="peer-badge">📶 جهاز_عمار (Bluetooth)</div>
-                </div>
+            <div class="info-text" id="status-info">اضغط مطولاً للتحدث أو قم بتثبيت الميكروفون مفتوحاً</div>
+        </div>
+
+        <!-- الأجهزة المجاورة -->
+        <div class="peers-section">
+            <div class="peers-title">
+                <span>المتصلون بالشبكة المحلية</span>
+                <span style="color: var(--accent); cursor: pointer;" onclick="scanNearby()">تحديث 🔄</span>
+            </div>
+            <div class="peers-list" id="peers-list">
+                <div class="peer-badge">📱 جهاز #8310 (Wi-Fi)</div>
+                <div class="peer-badge">📶 جهاز #1942 (Bluetooth)</div>
             </div>
         </div>
     </div>
@@ -155,29 +147,20 @@
         let userName = "";
         let activeChannel = "قناة 1 العامة";
         let isTransmitting = false;
+        let isMicLocked = false;
         let mediaStream = null;
-        let audioContext = null;
 
-        function initPTT() {
-            const input = document.getElementById('my-name').value.trim();
-            if (!input) {
-                alert('يرجى إدخال اسمك أو رقمك أولاً.');
-                return;
-            }
-            userName = input;
-            document.getElementById('display-name').innerText = `المستخدم: ${userName}`;
-            document.getElementById('setup-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'flex';
+        // الدخول الفوري عند فتح الصفحة وتوليد اسم عشوائي
+        window.onload = function() {
+            const randomID = Math.floor(1000 + Math.random() * 9000);
+            userName = `جهاز #${randomID}`;
+            document.getElementById('display-name').innerText = userName;
 
-            // طلب إذن الميكروفون مبكراً ليصبح الجاهزية فورية
+            // تجهيز الميكروفون تلقائياً
             navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    mediaStream = stream;
-                })
-                .catch(err => {
-                    alert("ملاحظة: يتطلب الووكي توكي تفعيل الميكروفون للصوت المباشر.");
-                });
-        }
+                .then(stream => { mediaStream = stream; })
+                .catch(err => { console.log("بانتظار السماح بالميكروفون عند التكلم"); });
+        };
 
         function switchChannel(element, channelName) {
             document.querySelectorAll('.channel-chip').forEach(el => el.classList.remove('active'));
@@ -186,9 +169,34 @@
             document.getElementById('status-info').innerText = `تم التحويل إلى: ${activeChannel}`;
         }
 
-        function startSpeaking() {
+        // التبديل بين قفل/فتح الميكروفون باستمرار
+        function toggleMicLock() {
+            isMicLocked = !isMicLocked;
+            const lockBtn = document.getElementById('lockMicBtn');
+            const lockIcon = document.getElementById('lockIcon');
+            const lockText = document.getElementById('lockText');
+
+            if (isMicLocked) {
+                lockBtn.classList.add('locked');
+                lockIcon.innerText = "🔓";
+                lockText.innerText = "الميكروفون مفتوح (اضغط لإغلاقه)";
+                startSpeaking(true);
+            } else {
+                lockBtn.classList.remove('locked');
+                lockIcon.innerText = "🔒";
+                lockText.innerText = "ابقاء الميكروفون مفتوحاً";
+                stopSpeaking(true);
+            }
+        }
+
+        function startSpeaking(fromLock = false) {
+            if (!fromLock && isMicLocked) return; // إذا كان الميكروفون مقفولاً على الوضع المفتوح لا داعي لزر الضغط
+
             if (!mediaStream) {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { mediaStream = stream; executeTalkState(); }).catch(() => alert('يرجى السماح بالميكروفون'));
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { 
+                    mediaStream = stream; 
+                    executeTalkState(); 
+                }).catch(() => alert('يرجى إعطاء إذن الميكروفون لتتمكن من التكلم'));
                 return;
             }
             executeTalkState();
@@ -202,13 +210,12 @@
 
             btn.classList.add('active');
             label.innerText = "جاري الإرسال...";
-            info.innerText = `🎙️ تتكلم الآن في (${activeChannel})... الصوت يبث للأجهزة المجاورة`;
-
-            // هنا يتم نقل البث الصوتي المباشر عبر حزم UDP/WebRTC المحلية للأجهزة على نفس القناة
+            info.innerText = `🎙️ الميكروفون يعمل الآن في (${activeChannel})`;
         }
 
-        function stopSpeaking() {
-            if (!isTransmitting) return;
+        function stopSpeaking(fromLock = false) {
+            if (isMicLocked && !fromLock) return; // إبقاء الصوت يعمل طالما الميكروفون مقفول على الوضع المفتوح
+
             isTransmitting = false;
             const btn = document.getElementById('pttButton');
             const label = document.getElementById('btn-label');
@@ -216,19 +223,19 @@
 
             btn.classList.remove('active');
             label.innerText = "اضغط وتكلم";
-            info.innerText = "تم إرسال الصوت. استماع للبقية...";
+            info.innerText = "الميكروفون مغلق. استماع للبقية...";
         }
 
         function scanNearby() {
             const list = document.getElementById('peers-list');
-            list.innerHTML = `<div class="peer-badge" style="color:var(--accent);">جاري البحث عبر الواي فاي والبلوتوث...</div>`;
+            list.innerHTML = `<div class="peer-badge" style="color:var(--accent);">جاري البحث...</div>`;
             setTimeout(() => {
                 list.innerHTML = `
-                    <div class="peer-badge">📱 هاتف_أحمد (Wi-Fi LAN)</div>
-                    <div class="peer-badge">📶 جهاز_عمار (Bluetooth BLE)</div>
-                    <div class="peer-badge">📱 محمد_الجادرية (Wi-Fi Hotspot)</div>
+                    <div class="peer-badge">📱 جهاز #8310 (Wi-Fi)</div>
+                    <div class="peer-badge">📶 جهاز #1942 (Bluetooth)</div>
+                    <div class="peer-badge">📱 جهاز #5021 (Wi-Fi)</div>
                 `;
-            }, 1000);
+            }, 800);
         }
     </script>
 </body>
